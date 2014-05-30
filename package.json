@@ -1,0 +1,24 @@
+{
+  "name": "tl-classifier",
+  "version": "0.0.0",
+  "description": "Attempt at automatic classification of transactions, based on deterministic attributes.",
+  "main": "index.js",
+  "dependencies": {
+    "brain": "~0.6.3",
+    "csv-to-json": "~0.0.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/waltervascarvalho/tl-classifier"
+  },
+  "author": "Walter Carvalho",
+  "license": "No License",
+  "bugs": {
+    "url": "https://github.com/waltervascarvalho/tl-classifier/issues"
+  },
+  "homepage": "https://github.com/waltervascarvalho/tl-classifier"
+}
