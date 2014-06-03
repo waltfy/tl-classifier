@@ -1,24 +1,43 @@
-/* dependencies */
-var brain = require('brain');
-var net = new brain.NeuralNetwork();
+// module.exports = require('./lib/tlc');
 
-/* constants */
-var SPLIT_RATIO = 0.25;
+var tlc = require('./lib/tlc');
 
-/* data */
-var data = require('csv-to-json').parse('./training_set.csv'); // parsing entry data to json
-var headers = (data.constructor === Array) ? Object.keys(data[0]) : null; // columns
-var t_set = data.slice(0, SPLIT_RATIO * data.length); // training set
-var v_set = data.slice(SPLIT_RATIO * data.length); // validation set
+// var headers = {
+//   input: [
+//     // 'TRX_SOURCE',
+//     // 'TRX_TYPE',
+//     'TRL_SF_COUNTRY_CODE',
+//     // 'TRL_SF_WHSE',
+//     // 'TRL_SDF_COUNTRY_CODE',
+//     // 'TRX_SDT_COUNTRY_CODE',
+//     // 'TRL_BT_COUNTRY_CODE',
+//     'TRL_ST_COUNTRY_CODE',
+//     // 'TRL_FOB_POINT_CODE',
+//     // 'SHIP_VIA'
+//   ],
+//   output: [
+//     // 'ZONE_NAME',
+//     'TAX_RATE_CODE',
+//     // 'TAX_TYPE',
+//     // 'TAX_RATE',
+//     // 'TAXABLE_BASIS',
+//     // 'TAXABLE_COUNTRY',
+//     // 'JURISDICTION_TEXT',
+//     // 'ERP_TAX_CODE',
+//     // 'IS_TRIANGULATION',
+//     // 'IS_EXEMPT',
+//     // 'EU_TRANSACTION',
+//     // 'AUTHORITY_NAME',
+//     // 'AUTHORITY_TYPE',
+//     // 'BASIS_PERCENT',
+//     // 'ADDRESS_TYPE',
+//     // 'TRLT_TAX_CODE'
+//   ]
+// };
 
+tlc.init('./test_data.csv', 'liked', ['color', 'shape']);
 
-
-// net.train([
-// 	{ input: { st_us: 1, sf_uk: 1 }, output: { TAX_EXT: 1 } },
-//         { input: { st_uk: 1, sf_us: 1 }, output: { TAX_EXT: 1 } },
-//         { input: { st_us: 1, sf_us: 1 }, output: { TAX_INT: 1 } },
-//         { input: { st_uk: 1, sf_uk: 1 }, output: { TAX_INT: 1 } },
-// ]);
-
-// var test = net.run({st_fr: 1, sf_uk: 1});
-// console.log(test);
+console.log(tlc.classify({
+  color: 'pink',
+  shape: 'ball'
+}));

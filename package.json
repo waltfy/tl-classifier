@@ -5,11 +5,15 @@
   "main": "index.js",
   "dependencies": {
     "brain": "~0.6.3",
-    "csv-to-json": "~0.0.1"
+    "divide": "0.0.2",
+    "csvjson": "^1.0.2",
+    "decision-tree": "^0.2.1"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "tap": "^0.4.9"
+  },
   "scripts": {
-    "test": "test"
+    "test": "tap ./test"
   },
   "repository": {
     "type": "git",
