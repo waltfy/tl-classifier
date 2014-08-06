@@ -3,28 +3,43 @@
   <head>
     <title>TLC DEMO</title>
     <script type='text/javascript' src='https://cdnjs.cloudflare.com/ajax/libs/superagent/0.15.7/superagent.min.js'></script>
+    <script src='http://fb.me/react-0.10.0.js'></script>
+    <link rel='stylesheet' type='text/css' href='style.css'>
+    <!-- // <script type='text/javascript' src='https://cdnjs.cloudflare.com/ajax/libs/react/0.10.0/react.min.js'></script> -->
   </head>
   <body>
-    <h1>TaxLogic Classifier</h1>
-    <p>1. Upload a csv in order to start</p>
-    <input type='file' id='files' name='files'/>
-    <p>2. Please mark the attributes below as input and output.</p>
-    <table id='classify_attr'>
-      <thead>
-        <th>Attribute</th>
-        <th>Input</th>
-        <th>Output</th>
-      </thead>
-      <tbody>
+    <div id='TLC_APP'>
+      <h1>TaxLogic Classifier</h1>
+      <p>1. Upload a csv in order to start</p>
+      <input type='file' id='files' name='files'/>
+      <p>2. Please mark the attributes below as input and output.</p>
+      <table id='classify_attr'>
+        <thead>
+          <th>Attribute</th>
+          <th>Input</th>
+          <th>Output</th>
+        </thead>
+        <tbody>
+          
+        </tbody>
+      </table>
+      <p>3. <button id='train'>Train</button></p>
+      <div id='results'>
         
-      </tbody>
-    </table>
-    <p>3. <button id='train'>Train</button></p>
-    <div id='results'>
-      
+      </div>
+      <p>4. Test</p>
+      <div id='test'>
+        <table id='classify_test'>
+          <thead>
+            
+          </thead>
+          <tbody>
+            
+          </tbody>
+        </table>
+      </div>
     </div>
-    <p>4. Test</p>
   </body>
-  <!-- // <script src='tlc.demo.js'></script> -->
   <script src='main.js'></script>
+  <script src='//localhost:35729/livereload.js'></script>
 </html>

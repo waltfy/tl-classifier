@@ -1,115 +1,230 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-console.debug('TLC DEMO');
+/** @jsx React.DOM */
+var TLC_APP = (function () {
 
-var tlc = require('../lib/tlc');
-var table = document.getElementById('classify_attr').getElementsByTagName('tbody')[0];
-var data = null;
+  var tlc = require('../../lib/tlc');
 
-var setData = function (json) {
-  data = json;
-};
-
-//var csv is the CSV file with headers
-function csvJSON (csv) {
+  function csvJSON (csv) {
  
-  var lines=csv.split("\n");
- 
-  var result = [];
- 
-  var headers=lines[0].split(",");
- 
-  for(var i=1;i<lines.length;i++){
- 
-    var obj = {};
-    var currentline=lines[i].split(",");
- 
-    for(var j=0;j<headers.length;j++){
-      obj[headers[j]] = currentline[j];
-    }
- 
-    result.push(obj);
- 
-  }
-  
-  //return result; //JavaScript object
-  return JSON.stringify(result); //JSON
-}
-
-// Check for the various File API support.
-if (window.File && window.FileReader && window.FileList && window.Blob) {
-  console.debug('access to files... OK');
-} else {
-  console.debug('access to files... FAILED');
-}
-
-var createRadioButton = function (group, value) {
-  var input = document.createElement("input");
-  input.type = 'radio';
-  input.name = group;
-  input.value = value;
-  return input;
-};
-
-var renderTable = function () {
-  table.innerHTML = '';
-  var arr = Object.keys(data[0]);
-  for (var i in arr) {
-    var row = table.insertRow(table.rows.length);
-    var attr = row.insertCell(0);
-    var input = row.insertCell(1);
-    var output = row.insertCell(2);
-    row.id = 'row_' + i;
-    attr.innerHTML = arr[i];
-    // input type="radio" name="group1" value="Milk"> Milk<br>
-    ;
-    input.appendChild(createRadioButton(row.id, 'input'));
-    output.appendChild(createRadioButton(row.id, 'output'));
-  }
-};
-
-var handleFileSelect = function (e) {
-  var files = e.target.files; // FileList object
-  
-  var reader = new FileReader();
-  reader.readAsText(files[0]);
-
-  reader.onload = (function (file) {
-    return function (e) {
-      var json = JSON.parse(csvJSON(e.target.result));
-      setData(json);
-      renderTable();
-    };
-  })(files[0]);
-};
-
-var trainDecisionTree = function () {
-  var rows = table.rows;
-  if (rows.length === 0) return alert('No data to be trained');
-  var input = [],
-      output = null;
-
-  for (var i = 0; i < rows.length; i++) {
-    var cells = rows[i].cells;
-    for (var j = 0; j < cells.length; j++) {
-      var radio = cells[j].getElementsByTagName('input')[0];
-      if (typeof radio !== 'undefined' && radio.checked) {
-        if (radio.value === 'input') {
-          input.push(cells[0].innerHTML);
-        } else {
-          output = cells[0].innerHTML;
-        }
+    var lines = csv.split("\n");
+   
+    var result = [];
+   
+    var headers = lines[0].split(",");
+   
+    for (var i = 1; i < lines.length; i++){
+   
+      var obj = {};
+      var currentline = lines[i].split(",");
+   
+      for(var j = 0; j < headers.length; j++){
+        obj[headers[j]] = currentline[j];
       }
+      result.push(obj);
     }
+    
+    return result; //JavaScript object
+    // return JSON.stringify(result); //JSON
   }
-  var start = Date.now();
-  var accuracy = tlc.init(data, output, input);
-  var end = Date.now();
-  document.getElementById('results').innerHTML = "<p>Trained in: " + (end - start) + "ms</p><p>Accuracy: " + (accuracy * 100).toFixed(0) + "%</p>";
-};
 
-document.getElementById('files').addEventListener('change', handleFileSelect, false);
-document.getElementById('train').addEventListener('click', trainDecisionTree, false);
-},{"../lib/tlc":2}],2:[function(require,module,exports){
+  var Tester = React.createClass({displayName: 'Tester',
+    getInitialState: function () {
+      return { output: null, confidence: null }
+    },
+    classify: function () {
+      var input = {},
+          self = this;
+      this.props.features.forEach(function (attr) {
+        input[attr] = self.state[attr+'_val'];
+      });
+      this.setState({output: tlc.classify(input)});
+    },
+    handleChange: function (attr, e) {
+      var st = {};
+      st[attr+'_val'] = e.target.value;
+      this.setState(st, this.classify);
+    },
+    render: function () {
+      
+      var self = this;
+
+      var createHeaders = function (attr) {
+        return React.DOM.th(null, attr)
+      };
+
+      var createFields = function (attr) {
+        return React.DOM.td(null, React.DOM.input( {onChange:self.handleChange.bind(self, attr), type:"text"} ))
+      };
+
+      return (
+        React.DOM.div(null, 
+          React.DOM.p(null, "4. Input some data and see the results."),
+          React.DOM.table(null, 
+            React.DOM.thead(null, 
+              React.DOM.tr(null, 
+                this.props.features.map(createHeaders),
+                React.DOM.th(null, this.props.outputClass)
+              )
+            ),
+            React.DOM.tbody(null, 
+              React.DOM.tr(null, 
+                this.props.features.map(createFields),
+                React.DOM.td(null, React.DOM.input( {type:"text", readOnly:true, value:this.state.output} )),
+                React.DOM.td(null, React.DOM.input( {type:"text", readOnly:true, value:this.state.confidence} ))
+              )
+            )
+          )
+        )
+      )
+    }
+  });
+
+  var Trainer = React.createClass({displayName: 'Trainer',
+    render: function () {
+      return (
+        React.DOM.div(null, 
+          React.DOM.p(null, "3. ", React.DOM.button( {onClick:this.props.train}, "Train"), " the classifier."),
+          React.DOM.p(null, this.props.accuracy ? 'Accuracy: ' + (this.props.accuracy * 100).toFixed(0) + '%' : ''),
+          React.DOM.p(null, this.props.timeTaken ? 'Time(ms): ' + (this.props.timeTaken) + 'ms' : ''),
+          React.DOM.hr(null )
+        )
+      )
+    }
+  });
+
+  var AttrDefiner = React.createClass({displayName: 'AttrDefiner',
+    render: function () {
+
+      var self = this;
+
+      var createRow = function (attr, i) {
+        return (
+          React.DOM.tr( {key:i}, 
+            React.DOM.td(null, attr),
+            React.DOM.td(null, React.DOM.input( {type:"radio", name:attr, value:"input"})),
+            React.DOM.td(null, React.DOM.input( {type:"radio", name:attr, value:"output"}))
+          )
+        );
+      };
+
+      return (
+        React.DOM.div(null, 
+          React.DOM.p(null, "2. Select the attributes in order to determine an output."),
+          React.DOM.table(null, 
+            React.DOM.thead(null, 
+              React.DOM.tr(null, 
+                React.DOM.th(null, "Attribute"),
+                React.DOM.th(null, "Input"),
+                React.DOM.th(null, "Output")
+              )
+            ),
+            React.DOM.form( {onChange:this.props.setCategory} , 
+              React.DOM.tbody(null, 
+                 Object.keys(this.props.headers).map(createRow) 
+              )
+            )
+          ),
+          React.DOM.hr(null )
+        )
+      );
+    }
+  });
+
+  var DataLoader = React.createClass({displayName: 'DataLoader',
+    onChange: function (e) {
+      e.preventDefault();
+      var files = e.target.files; // FileList object
+  
+      var reader = new FileReader();
+
+      reader.onload = (function (file, ctx) {
+        return function (e) {
+          var json = csvJSON(e.target.result);
+          ctx.props.setData(json);
+        };
+      })(files[0], this);
+
+      reader.readAsText(files[0]);
+    },
+    render: function () {
+      return (
+        React.DOM.div(null, 
+          React.DOM.p(null, "1. Please select a csv ", React.DOM.input( {type:"file", accept:".csv", onChange:this.onChange} )),
+          React.DOM.hr(null )
+        )
+      );
+    }
+  });
+
+  var App = React.createClass({displayName: 'App',
+    getInitialState: function () {
+      return { data: [], headers: {}, accuracy: null, timeTaken: null, features: [], outputClass: '' }
+    },
+    reset: function (e) {
+      e.preventDefault();
+      console.debug('resetting application');
+    },
+    train: function (e) {
+      e.preventDefault();
+      var headers = this.state.headers,
+          outputClass = null,
+          features = [];
+
+
+      Object.keys(this.state.headers).forEach(function (attr) {
+        if (headers[attr] === 'input') {
+          features.push(attr);
+        }
+
+        if (headers[attr] === 'output') {
+          outputClass = attr;
+        }
+      });
+
+      var start = Date.now();
+      var accuracy = tlc.init(this.state.data, outputClass, features);
+      var end = Date.now();
+      this.setState({ accuracy: accuracy, time: (end - start), features: features, outputClass: outputClass });
+    },
+    setHeaders: function (data) {
+      var headers = {};
+      Object.keys(data[0]).forEach(function (attr) {
+        headers[attr] = null;
+      });
+      this.setState({ headers: headers });
+    },
+    setCategory: function (e) {
+      var headers = this.state.headers;
+      headers[e.target.name] = e.target.value;
+      this.setState({ headers: headers });
+    },
+    setData: function (data) {
+      var self = this;
+      this.setState({ data: data }, function () {
+        self.setHeaders(self.state.data);
+      });
+    },
+    render: function () {
+      var state = this.state;
+      return (
+        React.DOM.div(null, 
+          React.DOM.button( {onClick: this.reset } , "Reset"),
+          React.DOM.h1(null, this.props.fileSupport ? 'TaxLogic Classifier Prototype' : 'Your browser does not support this demo.' ),
+          DataLoader( {setData: this.setData } ),
+          AttrDefiner( {headers: state.headers,  setCategory: this.setCategory } ),
+          Trainer( {train:this.train, accuracy:state.accuracy, timeTaken:state.time}),
+          Tester( {outputClass:state.outputClass, features:state.features})
+        )
+      );
+    }
+  });
+
+  // checks for file reader support
+  var supportsFileReader = (window.File !== 'undefined' && window.FileReader !== 'undefined' && window.FileList !== 'undefined' && window.Blob !== 'undefined');
+  React.renderComponent(App( {fileSupport:supportsFileReader} ), window.TLC_APP);
+
+})(window);
+},{"../../lib/tlc":2}],2:[function(require,module,exports){
 // dependencies 
 var DecisionTree = require('decision-tree');
 // var csvjson = require('csvjson');
@@ -127,8 +242,8 @@ var init = function (json, className, features) {
   // var json = csvjson.toObject('./test_data.csv').output;
   classifier = new DecisionTree(json, className, features);
   var accuracy = classifier.evaluate(splitData(json)[1]);
-  if (accuracy < 0.9) throw new Error('Accuracy below 90%');
-  else return accuracy;
+  // if (accuracy < 0.9) throw new Error('Accuracy below 90%');
+  return accuracy;
 };
 
 module.exports = {

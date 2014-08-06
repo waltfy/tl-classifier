@@ -2,6 +2,7 @@ console.debug('TLC DEMO');
 
 var tlc = require('../lib/tlc');
 var table = document.getElementById('classify_attr').getElementsByTagName('tbody')[0];
+var testTable = document.getElementById('classify_test');
 var data = null;
 
 var setData = function (json) {
@@ -41,6 +42,14 @@ if (window.File && window.FileReader && window.FileList && window.Blob) {
   console.debug('access to files... FAILED');
 }
 
+var createTextField = function (name) {
+  var input = document.createElement("input");
+  input.type = 'text';
+  input.name = name;
+  input.id = name;
+  return input;
+};
+
 var createRadioButton = function (group, value) {
   var input = document.createElement("input");
   input.type = 'radio';
@@ -48,6 +57,40 @@ var createRadioButton = function (group, value) {
   input.value = value;
   return input;
 };
+
+var runTest = function (e) {
+  var attr_a = document.getElementById('color_test').value;
+  var attr_b = document.getElementById('shape_test').value;
+
+  if (attr_a && attr_b) {
+    var result = tlc.classify({color: attr_a, shape: attr_b}) 
+    document.getElementById('output_test').innerHTML = result;
+    console.log(result);
+  }
+};
+
+var createTestTable = function (inputs, outputs) {
+  var header = testTable.createTHead();
+  var row = header.insertRow(0);
+  for (var i in inputs) {
+    var curr = row.insertCell(i);
+    curr.innerHTML = inputs[i];
+  }
+  last = row.insertCell(row.cells.length);
+  last.innerHTML = outputs;
+
+  var body = testTable.getElementsByTagName('tbody')[0];
+  row = body.insertRow(0);
+  for (var i in inputs) {
+    var curr = row.insertCell(i);
+    var el = createTextField(inputs[i] + '_test');
+    curr.appendChild(el);
+    el.addEventListener('change', runTest, false);
+  }
+  last = row.insertCell(row.cells.length);
+  last.id = 'output_test';
+  return;
+}
 
 var renderTable = function () {
   table.innerHTML = '';
@@ -59,8 +102,6 @@ var renderTable = function () {
     var output = row.insertCell(2);
     row.id = 'row_' + i;
     attr.innerHTML = arr[i];
-    // input type="radio" name="group1" value="Milk"> Milk<br>
-    ;
     input.appendChild(createRadioButton(row.id, 'input'));
     output.appendChild(createRadioButton(row.id, 'output'));
   }
@@ -100,10 +141,13 @@ var trainDecisionTree = function () {
       }
     }
   }
+
   var start = Date.now();
   var accuracy = tlc.init(data, output, input);
   var end = Date.now();
-  document.getElementById('results').innerHTML = "<p>Trained in: " + (end - start) + "ms</p><p>Accuracy: " + (accuracy * 100).toFixed(0) + "%</p>";
+
+  if (accuracy > 0.9) createTestTable(input, output);
+  document.getElementById('results').innerHTML = "<p>Training set size: " + data.length + "</p><p>Trained in: " + (end - start) + "ms</p><p>Accuracy: " + (accuracy * 100).toFixed(0) + "%</p>";
 };
 
 document.getElementById('files').addEventListener('change', handleFileSelect, false);
