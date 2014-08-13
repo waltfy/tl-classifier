@@ -4,7 +4,7 @@
   "description": "Attempt at automatic classification of transactions, based on deterministic attributes.",
   "main": "index.js",
   "dependencies": {
-    "divide": "0.0.2",
+    "divide": "0.0.3",
     "csvjson": "^1.0.2",
     "decision-tree": "^0.2.1"
   },

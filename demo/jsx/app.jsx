@@ -28,7 +28,7 @@ var TLC_APP = (function () {
 
   var Tester = React.createClass({
     getInitialState: function () {
-      return { output: null, confidence: null }
+      return { output: null }
     },
     classify: function () {
       var input = {},
@@ -62,14 +62,13 @@ var TLC_APP = (function () {
             <thead>
               <tr>
                 {this.props.features.map(createHeaders)}
-                <th>{this.props.outputClass}</th>
+                <th>{this.props.outputClass || 'Output'}</th>
               </tr>
             </thead>
             <tbody>
               <tr>
                 {this.props.features.map(createFields)}
                 <td><input type='text' readOnly value={this.state.output} /></td>
-                <td><input type='text' readOnly value={this.state.confidence} /></td>
               </tr>
             </tbody>
           </table>
@@ -91,7 +90,7 @@ var TLC_APP = (function () {
     }
   });
 
-  var AttrDefiner = React.createClass({
+  var AttrSetter = React.createClass({
     render: function () {
 
       var self = this;
@@ -132,9 +131,9 @@ var TLC_APP = (function () {
   var DataLoader = React.createClass({
     onChange: function (e) {
       e.preventDefault();
-      var files = e.target.files; // FileList object
-  
+
       var reader = new FileReader();
+      var files = e.target.files; // FileList object
 
       reader.onload = (function (file, ctx) {
         return function (e) {
@@ -148,7 +147,7 @@ var TLC_APP = (function () {
     render: function () {
       return (
         <div>
-          <p>1. Please select a csv <input type='file' accept='.csv' onChange={this.onChange} /></p>
+          <p>1. Please select a csv <input type='file' accept='.csv' onChange={ this.onChange } /></p>
           <hr />
         </div>
       );
@@ -157,27 +156,26 @@ var TLC_APP = (function () {
 
   var App = React.createClass({
     getInitialState: function () {
-      return { data: [], headers: {}, accuracy: null, timeTaken: null, features: [], outputClass: '' }
+      return {
+        data: [],
+        headers: {},
+        accuracy: null,
+        timeTaken: null,
+        features: [],
+        outputClass: ''
+      };
     },
     reset: function (e) {
-      e.preventDefault();
-      console.debug('resetting application');
+      console.debug('resetting application...');
     },
     train: function (e) {
-      e.preventDefault();
       var headers = this.state.headers,
           outputClass = null,
           features = [];
 
-
       Object.keys(this.state.headers).forEach(function (attr) {
-        if (headers[attr] === 'input') {
-          features.push(attr);
-        }
-
-        if (headers[attr] === 'output') {
-          outputClass = attr;
-        }
+        if (headers[attr] === 'input') features.push(attr);
+        if (headers[attr] === 'output') outputClass = attr;
       });
 
       var start = Date.now();
@@ -208,11 +206,11 @@ var TLC_APP = (function () {
       return (
         <div>
           <button onClick={ this.reset } >Reset</button>
-          <h1>{this.props.fileSupport ? 'TaxLogic Classifier Prototype' : 'Your browser does not support this demo.' }</h1>
+          <h1>{ this.props.fileSupport ? 'TaxLogic Classifier Prototype' : 'Your browser does not support this demo.' }</h1>
           <DataLoader setData={ this.setData } />
-          <AttrDefiner headers={ state.headers } setCategory={ this.setCategory } />
-          <Trainer train={this.train} accuracy={state.accuracy} timeTaken={state.time}/>
-          <Tester outputClass={state.outputClass} features={state.features}/>
+          <AttrSetter headers={ state.headers } setCategory={ this.setCategory } />
+          <Trainer train={ this.train } accuracy={ state.accuracy } timeTaken={ state.time }/>
+          <Tester outputClass={ state.outputClass } features={ state.features }/>
         </div>
       );
     }
@@ -220,6 +218,8 @@ var TLC_APP = (function () {
 
   // checks for file reader support
   var supportsFileReader = (window.File !== 'undefined' && window.FileReader !== 'undefined' && window.FileList !== 'undefined' && window.Blob !== 'undefined');
+
+  // mount the app
   React.renderComponent(<App fileSupport={supportsFileReader} />, window.TLC_APP);
 
 })(window);

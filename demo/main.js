@@ -1,4 +1,4 @@
-(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 /** @jsx React.DOM */
 var TLC_APP = (function () {
 
@@ -29,7 +29,7 @@ var TLC_APP = (function () {
 
   var Tester = React.createClass({displayName: 'Tester',
     getInitialState: function () {
-      return { output: null, confidence: null }
+      return { output: null }
     },
     classify: function () {
       var input = {},
@@ -53,24 +53,23 @@ var TLC_APP = (function () {
       };
 
       var createFields = function (attr) {
-        return React.DOM.td(null, React.DOM.input( {onChange:self.handleChange.bind(self, attr), type:"text"} ))
+        return React.DOM.td(null, React.DOM.input({onChange: self.handleChange.bind(self, attr), type: "text"}))
       };
 
       return (
         React.DOM.div(null, 
-          React.DOM.p(null, "4. Input some data and see the results."),
+          React.DOM.p(null, "4. Input some data and see the results."), 
           React.DOM.table(null, 
             React.DOM.thead(null, 
               React.DOM.tr(null, 
-                this.props.features.map(createHeaders),
-                React.DOM.th(null, this.props.outputClass)
+                this.props.features.map(createHeaders), 
+                React.DOM.th(null, this.props.outputClass || 'Output')
               )
-            ),
+            ), 
             React.DOM.tbody(null, 
               React.DOM.tr(null, 
-                this.props.features.map(createFields),
-                React.DOM.td(null, React.DOM.input( {type:"text", readOnly:true, value:this.state.output} )),
-                React.DOM.td(null, React.DOM.input( {type:"text", readOnly:true, value:this.state.confidence} ))
+                this.props.features.map(createFields), 
+                React.DOM.td(null, React.DOM.input({type: "text", readOnly: true, value: this.state.output}))
               )
             )
           )
@@ -83,48 +82,48 @@ var TLC_APP = (function () {
     render: function () {
       return (
         React.DOM.div(null, 
-          React.DOM.p(null, "3. ", React.DOM.button( {onClick:this.props.train}, "Train"), " the classifier."),
-          React.DOM.p(null, this.props.accuracy ? 'Accuracy: ' + (this.props.accuracy * 100).toFixed(0) + '%' : ''),
-          React.DOM.p(null, this.props.timeTaken ? 'Time(ms): ' + (this.props.timeTaken) + 'ms' : ''),
-          React.DOM.hr(null )
+          React.DOM.p(null, "3. ", React.DOM.button({onClick: this.props.train}, "Train"), " the classifier."), 
+          React.DOM.p(null, this.props.accuracy ? 'Accuracy: ' + (this.props.accuracy * 100).toFixed(0) + '%' : ''), 
+          React.DOM.p(null, this.props.timeTaken ? 'Time(ms): ' + (this.props.timeTaken) + 'ms' : ''), 
+          React.DOM.hr(null)
         )
       )
     }
   });
 
-  var AttrDefiner = React.createClass({displayName: 'AttrDefiner',
+  var AttrSetter = React.createClass({displayName: 'AttrSetter',
     render: function () {
 
       var self = this;
 
       var createRow = function (attr, i) {
         return (
-          React.DOM.tr( {key:i}, 
-            React.DOM.td(null, attr),
-            React.DOM.td(null, React.DOM.input( {type:"radio", name:attr, value:"input"})),
-            React.DOM.td(null, React.DOM.input( {type:"radio", name:attr, value:"output"}))
+          React.DOM.tr({key: i}, 
+            React.DOM.td(null, attr), 
+            React.DOM.td(null, React.DOM.input({type: "radio", name: attr, value: "input"})), 
+            React.DOM.td(null, React.DOM.input({type: "radio", name: attr, value: "output"}))
           )
         );
       };
 
       return (
         React.DOM.div(null, 
-          React.DOM.p(null, "2. Select the attributes in order to determine an output."),
+          React.DOM.p(null, "2. Select the attributes in order to determine an output."), 
           React.DOM.table(null, 
             React.DOM.thead(null, 
               React.DOM.tr(null, 
-                React.DOM.th(null, "Attribute"),
-                React.DOM.th(null, "Input"),
+                React.DOM.th(null, "Attribute"), 
+                React.DOM.th(null, "Input"), 
                 React.DOM.th(null, "Output")
               )
-            ),
-            React.DOM.form( {onChange:this.props.setCategory} , 
+            ), 
+            React.DOM.form({onChange: this.props.setCategory}, 
               React.DOM.tbody(null, 
                  Object.keys(this.props.headers).map(createRow) 
               )
             )
-          ),
-          React.DOM.hr(null )
+          ), 
+          React.DOM.hr(null)
         )
       );
     }
@@ -133,9 +132,9 @@ var TLC_APP = (function () {
   var DataLoader = React.createClass({displayName: 'DataLoader',
     onChange: function (e) {
       e.preventDefault();
-      var files = e.target.files; // FileList object
-  
+
       var reader = new FileReader();
+      var files = e.target.files; // FileList object
 
       reader.onload = (function (file, ctx) {
         return function (e) {
@@ -149,8 +148,8 @@ var TLC_APP = (function () {
     render: function () {
       return (
         React.DOM.div(null, 
-          React.DOM.p(null, "1. Please select a csv ", React.DOM.input( {type:"file", accept:".csv", onChange:this.onChange} )),
-          React.DOM.hr(null )
+          React.DOM.p(null, "1. Please select a csv ", React.DOM.input({type: "file", accept: ".csv", onChange:  this.onChange})), 
+          React.DOM.hr(null)
         )
       );
     }
@@ -158,27 +157,26 @@ var TLC_APP = (function () {
 
   var App = React.createClass({displayName: 'App',
     getInitialState: function () {
-      return { data: [], headers: {}, accuracy: null, timeTaken: null, features: [], outputClass: '' }
+      return {
+        data: [],
+        headers: {},
+        accuracy: null,
+        timeTaken: null,
+        features: [],
+        outputClass: ''
+      };
     },
     reset: function (e) {
-      e.preventDefault();
-      console.debug('resetting application');
+      console.debug('resetting application...');
     },
     train: function (e) {
-      e.preventDefault();
       var headers = this.state.headers,
           outputClass = null,
           features = [];
 
-
       Object.keys(this.state.headers).forEach(function (attr) {
-        if (headers[attr] === 'input') {
-          features.push(attr);
-        }
-
-        if (headers[attr] === 'output') {
-          outputClass = attr;
-        }
+        if (headers[attr] === 'input') features.push(attr);
+        if (headers[attr] === 'output') outputClass = attr;
       });
 
       var start = Date.now();
@@ -208,12 +206,12 @@ var TLC_APP = (function () {
       var state = this.state;
       return (
         React.DOM.div(null, 
-          React.DOM.button( {onClick: this.reset } , "Reset"),
-          React.DOM.h1(null, this.props.fileSupport ? 'TaxLogic Classifier Prototype' : 'Your browser does not support this demo.' ),
-          DataLoader( {setData: this.setData } ),
-          AttrDefiner( {headers: state.headers,  setCategory: this.setCategory } ),
-          Trainer( {train:this.train, accuracy:state.accuracy, timeTaken:state.time}),
-          Tester( {outputClass:state.outputClass, features:state.features})
+          React.DOM.button({onClick:  this.reset}, "Reset"), 
+          React.DOM.h1(null,  this.props.fileSupport ? 'TaxLogic Classifier Prototype' : 'Your browser does not support this demo.'), 
+          DataLoader({setData:  this.setData}), 
+          AttrSetter({headers:  state.headers, setCategory:  this.setCategory}), 
+          Trainer({train:  this.train, accuracy:  state.accuracy, timeTaken:  state.time}), 
+          Tester({outputClass:  state.outputClass, features:  state.features})
         )
       );
     }
@@ -221,28 +219,42 @@ var TLC_APP = (function () {
 
   // checks for file reader support
   var supportsFileReader = (window.File !== 'undefined' && window.FileReader !== 'undefined' && window.FileList !== 'undefined' && window.Blob !== 'undefined');
-  React.renderComponent(App( {fileSupport:supportsFileReader} ), window.TLC_APP);
+
+  // mount the app
+  React.renderComponent(App({fileSupport: supportsFileReader}), window.TLC_APP);
 
 })(window);
 },{"../../lib/tlc":2}],2:[function(require,module,exports){
 // dependencies 
 var DecisionTree = require('decision-tree');
-// var csvjson = require('csvjson');
 var divide = require('divide');
-// var fs = require('fs');
 
 var classifier = {};
 
-var splitData = function (json, ratio) {
-  ratio = (typeof ratio !== 'undefined' && ratio.constructor === Number) ? ratio : 0.75; // sets ratio default
-  return divide.ratio(json, ratio);
-};
+/**
+ * splitData() 
+ */
+// var splitData = function (json, ratio) {
+//   ratio = (typeof ratio !== 'undefined' && ratio.constructor === Number) ? ratio : 0.75; // sets ratio default
+//   return divide.ratio(json, ratio);
+// };
 
+/**
+ * splitData() 
+ */
 var init = function (json, className, features) {
-  // var json = csvjson.toObject('./test_data.csv').output;
-  classifier = new DecisionTree(json, className, features);
-  var accuracy = classifier.evaluate(splitData(json)[1]);
-  // if (accuracy < 0.9) throw new Error('Accuracy below 90%');
+  if (typeof json === 'undefined') throw new Error('JSON not present');
+  var json = divide.ratio(json, 0.75);
+  // json[0].forEach(function (item) {
+  //   console.log(item);
+  // });
+  try {
+    classifier = new DecisionTree(json[0], className, features);    
+  } catch (e) {
+    console.debug(e);
+  }
+  
+  var accuracy = classifier.evaluate(json[1]);
   return accuracy;
 };
 
@@ -252,8 +264,10 @@ module.exports = {
     var result;
     try {
       result = classifier.predict(obj);
+      console.log('result', result);
     } catch (e) {
-      console.log(e);
+      console.debug('could not classify, RETRAIN');
+      // console.log(e);
     } finally {
       return result;
     }
@@ -1619,25 +1633,66 @@ function randomTag() {
 },{}],5:[function(require,module,exports){
 module.exports = require('./lib/divide');
 },{"./lib/divide":6}],6:[function(require,module,exports){
-var sum = function (a, b) {
-  return a + b;
+var sum = function (a, b) { return a + b; }
+
+// adapted from http://stackoverflow.com/a/3943985
+function shuffleString (str) {
+  var str = str.split(''),
+      n = str.length;
+
+  for (var i = n - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = str[i];
+    str[i] = str[j];
+    str[j] = tmp;
+  }
+
+  return str.join("");
+}
+
+// adapted from Jonas Raoni Soares Silva @ http://jsfromhell.com/array/shuffle [v1.0]
+function shuffle (o) { //v1.0
+  if (o.constructor === String) { return shuffleString.call(null, o)}
+  for (var j, x, i = o.length; i; j = Math.floor(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
+  return o;
 }
 
 module.exports = {
-  ratio: function () {
-    var args = [].slice.call(arguments);
-    var arr = args.shift();
-    var total = 0;
+  /**
+   * ratio() Splits an Array (or String) with given ratios
+   *
+   * arr    - An array to be splitted.
+   * splits - Comma separated values (floats), their sum must equal `1`.
+   *          If only one float is passed in, we append the difference (1 - x) to the `args` array.
+   *
+   * returns an array with sub-arrays (or the splitted arrays)
+   */
+  ratio: function (arr /* , splits */) {
+    var args = [].slice.call(arguments, 1),
+        total = 0;
     
     if (args.length === 1) args.push(1 - args[0]);
     if (args.reduce(sum) > 1) return new Error('The sum of the ratios entered should equal to 1.').stack;
 
-    return args.map(function (value, i, a) {
-      var start = Math.floor(total * arr.length);
-      var end = Math.floor((value + total) * arr.length);
+    return args.map(function (value) {
+      var start = ~~(total * arr.length);
+      var end = ~~((value + total) * arr.length);
       total += value;
       return arr.slice(start, end);
     });
+  },
+  
+  /**
+   * random() Shuffles then splits an Array (or String) with given ratios
+   *
+   * arr    - An array to be splitted.
+   * splits - Comma separated values (floats), their sum must equal `1`.
+   *          If only one float is passed in, we append the difference (1 - x) to the `args` array.
+   *
+   * returns an array with sub-arrays (or the splitted arrays)
+   */
+  random: function (arr /* , splits */) {
+    return this.ratio.apply(null, [shuffle(arr)].concat([].slice.call(arguments, 1)));
   }
 };
-},{}]},{},[1])
+},{}]},{},[1]);

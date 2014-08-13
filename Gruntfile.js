@@ -21,6 +21,13 @@ module.exports = function(grunt) {
       }
     },
     watch: {
+      library: {
+        files: 'lib/*.js',
+        tasks: ['browserify'],
+        options: {
+          livereload: true,
+        },
+      },
       scripts: {
         files: 'demo/jsx/*.jsx',
         tasks: ['browserify'],
