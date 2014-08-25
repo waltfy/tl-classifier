@@ -1,3 +1,5 @@
-color, shape
-blue, square
-red, circle
+color, shape, liked
+blue, square, true
+red, circle, false
+blue, hexagon, true
+red, triangle, true

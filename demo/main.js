@@ -1,59 +1,65 @@
-(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 /** @jsx React.DOM */
 var TLC_APP = (function () {
 
   var tlc = require('../../lib/tlc');
 
   function csvJSON (csv) {
- 
+
     var lines = csv.split("\n");
-   
+
     var result = [];
-   
+
     var headers = lines[0].split(",");
-   
+
     for (var i = 1; i < lines.length; i++){
-   
+
       var obj = {};
       var currentline = lines[i].split(",");
-   
-      for(var j = 0; j < headers.length; j++){
+
+      for (var j = 0; j < headers.length; j++){
         obj[headers[j]] = currentline[j];
       }
       result.push(obj);
     }
-    
-    return result; //JavaScript object
-    // return JSON.stringify(result); //JSON
+
+    return result; // POJO
+    // return JSON.stringify(result); // JSON
   }
 
   var Tester = React.createClass({displayName: 'Tester',
+
     getInitialState: function () {
-      return { output: null }
+      return { output: null };
     },
+
     classify: function () {
       var input = {},
           self = this;
+
       this.props.features.forEach(function (attr) {
         input[attr] = self.state[attr+'_val'];
       });
+
       this.setState({output: tlc.classify(input)});
     },
+
     handleChange: function (attr, e) {
       var st = {};
       st[attr+'_val'] = e.target.value;
       this.setState(st, this.classify);
     },
+
     render: function () {
-      
+
       var self = this;
 
-      var createHeaders = function (attr) {
-        return React.DOM.th(null, attr)
+      var createHeaders = function (attr, i) {
+        return React.DOM.th({key: i }, attr );
       };
 
-      var createFields = function (attr) {
-        return React.DOM.td(null, React.DOM.input({onChange: self.handleChange.bind(self, attr), type: "text"}))
+      var createFields = function (attr, i) {
+        return React.DOM.td({key: i }, React.DOM.input({onChange:  self.handleChange.bind(self, attr), type: "text"}));
       };
 
       return (
@@ -74,41 +80,46 @@ var TLC_APP = (function () {
             )
           )
         )
-      )
+      );
     }
   });
 
   var Trainer = React.createClass({displayName: 'Trainer',
     render: function () {
+      var props = this.props;
+      console.log('props:', props);
       return (
         React.DOM.div(null, 
-          React.DOM.p(null, "3. ", React.DOM.button({onClick: this.props.train}, "Train"), " the classifier."), 
-          React.DOM.p(null, this.props.accuracy ? 'Accuracy: ' + (this.props.accuracy * 100).toFixed(0) + '%' : ''), 
-          React.DOM.p(null, this.props.timeTaken ? 'Time(ms): ' + (this.props.timeTaken) + 'ms' : ''), 
+          React.DOM.p(null, "3. ", React.DOM.button({onClick: props.train}, "Train"), " the classifier."), 
+          React.DOM.p(null, props.accuracy ? 'Accuracy: ' + (props.accuracy * 100).toFixed(0) + '%' : ''), 
+          React.DOM.p(null, props.timeTaken ? 'Training Time(ms): ' + (props.timeTaken) + 'ms' : ''), 
           React.DOM.hr(null)
         )
-      )
+      );
     }
   });
 
-  var AttrSetter = React.createClass({displayName: 'AttrSetter',
+  var AttributePicker = React.createClass({displayName: 'AttributePicker',
+
     render: function () {
-
       var self = this;
-
       var createRow = function (attr, i) {
+        var props = self.props;
+        var item = props.headers[attr];
+        var isOutput = (props.output === attr);
+
         return (
-          React.DOM.tr({key: i}, 
-            React.DOM.td(null, attr), 
-            React.DOM.td(null, React.DOM.input({type: "radio", name: attr, value: "input"})), 
-            React.DOM.td(null, React.DOM.input({type: "radio", name: attr, value: "output"}))
+          React.DOM.tr({key: i }, 
+            React.DOM.td(null, attr ), 
+            React.DOM.td(null,  isOutput ? '' : React.DOM.input({type: "checkbox", value: attr, onChange:  props.setInput, checked:  item.selected})), 
+            React.DOM.td(null,  item.selected ? '' : React.DOM.input({type: "radio", value: attr, name: "output", onChange:  props.setOutput, checked: isOutput }))
           )
         );
       };
 
       return (
         React.DOM.div(null, 
-          React.DOM.p(null, "2. Select the attributes in order to determine an output."), 
+          React.DOM.p(null, "2. Select the attributes in order to determine an output. ", React.DOM.button({onClick:  this.props.setOutput, value: null}, "Clear Output")), 
           React.DOM.table(null, 
             React.DOM.thead(null, 
               React.DOM.tr(null, 
@@ -117,7 +128,7 @@ var TLC_APP = (function () {
                 React.DOM.th(null, "Output")
               )
             ), 
-            React.DOM.form({onChange: this.props.setCategory}, 
+            React.DOM.form(null, 
               React.DOM.tbody(null, 
                  Object.keys(this.props.headers).map(createRow) 
               )
@@ -139,12 +150,13 @@ var TLC_APP = (function () {
       reader.onload = (function (file, ctx) {
         return function (e) {
           var json = csvJSON(e.target.result);
-          ctx.props.setData(json);
+          ctx.props.loadData(json);
         };
       })(files[0], this);
 
       reader.readAsText(files[0]);
     },
+
     render: function () {
       return (
         React.DOM.div(null, 
@@ -160,57 +172,75 @@ var TLC_APP = (function () {
       return {
         data: [],
         headers: {},
+        output: null,
         accuracy: null,
         timeTaken: null,
-        features: [],
-        outputClass: ''
+        features: []
       };
     },
-    reset: function (e) {
-      console.debug('resetting application...');
-    },
-    train: function (e) {
-      var headers = this.state.headers,
-          outputClass = null,
-          features = [];
 
-      Object.keys(this.state.headers).forEach(function (attr) {
-        if (headers[attr] === 'input') features.push(attr);
-        if (headers[attr] === 'output') outputClass = attr;
+    reset: function (e) {
+      console.debug('should reset the application');
+    },
+
+    train: function (e) {
+      var state = this.state;
+      var headers = state.headers,
+          output = state.output;
+
+      var features = Object.keys(state.headers).filter(function (attr) {
+        return state.headers[attr].selected;
       });
 
       var start = Date.now();
-      var accuracy = tlc.init(this.state.data, outputClass, features);
+      var accuracy = tlc.train(this.state.data, output, features);
       var end = Date.now();
-      this.setState({ accuracy: accuracy, time: (end - start), features: features, outputClass: outputClass });
+      this.setState({ accuracy: accuracy, timeTaken: (end - start), features: features });
     },
-    setHeaders: function (data) {
+
+    /**
+     * getHeaders() retrieves the headers from a dataset
+     *
+     * data       Array - the data to be processed
+     * content    Anything - the value for each key in the object returned
+     * returns    Array - the headers in the desired format
+     */
+    getHeaders: function (data, content) {
       var headers = {};
+      content = (typeof content !== 'undefined') ? content : {}; // sets default for content
+      // picks a sample row and extracts the keys, setting it to an object
       Object.keys(data[0]).forEach(function (attr) {
-        headers[attr] = null;
+        headers[attr.trim()] = Object.create(content); // create a new object for each header
       });
-      this.setState({ headers: headers });
+      return headers;
     },
-    setCategory: function (e) {
+
+    // setInput() handles the change of checkboxes for each attribute
+    setInput: function (e) {
       var headers = this.state.headers;
-      headers[e.target.name] = e.target.value;
+      headers[e.target.value].selected = e.target.checked;
       this.setState({ headers: headers });
     },
-    setData: function (data) {
-      var self = this;
-      this.setState({ data: data }, function () {
-        self.setHeaders(self.state.data);
-      });
+
+    // setOutput() handles the change of radio button for output
+    setOutput: function (e) {
+      this.setState({ output: e.target.value });
     },
+
+    // loadData() handles the loading of the dataset, and is responsible for adding it to the state
+    loadData: function (data) {
+      this.setState({ data: data, headers: this.getHeaders(data, { selected: false }) });
+    },
+
     render: function () {
       var state = this.state;
       return (
         React.DOM.div(null, 
           React.DOM.button({onClick:  this.reset}, "Reset"), 
           React.DOM.h1(null,  this.props.fileSupport ? 'TaxLogic Classifier Prototype' : 'Your browser does not support this demo.'), 
-          DataLoader({setData:  this.setData}), 
-          AttrSetter({headers:  state.headers, setCategory:  this.setCategory}), 
-          Trainer({train:  this.train, accuracy:  state.accuracy, timeTaken:  state.time}), 
+          DataLoader({loadData:  this.loadData}), 
+          AttributePicker({headers:  state.headers, output:  state.output, setInput:  this.setInput, setOutput:  this.setOutput}), 
+          Trainer({train:  this.train, accuracy:  state.accuracy, timeTaken:  state.timeTaken}), 
           Tester({outputClass:  state.outputClass, features:  state.features})
         )
       );
@@ -224,49 +254,49 @@ var TLC_APP = (function () {
   React.renderComponent(App({fileSupport: supportsFileReader}), window.TLC_APP);
 
 })(window);
+
 },{"../../lib/tlc":2}],2:[function(require,module,exports){
-// dependencies 
+// dependencies
 var DecisionTree = require('decision-tree');
 var divide = require('divide');
-
-var classifier = {};
 
 // TODO validate the data for veryfing accuracyg
 
 /**
- * splitData() 
+ * train() trains the decision tree given a data set
+ *
+ * data       Array - data set to be used to train and evaluate the Decision Tree
+ * target     String - attribute to be classified
+ * features   Array - list of attributes used to train the decision tree
+ *
+ * returns    Object - the current classifier.
  */
-// var splitData = function (json, ratio) {
-//   ratio = (typeof ratio !== 'undefined' && ratio.constructor === Number) ? ratio : 0.75; // sets ratio default
-//   return divide.ratio(json, ratio);
-// };
+var train = function (data, target, features) {
+  // validate
+  if (typeof data === 'undefined') throw new Error('A data set is required.');
+  if (typeof target === 'undefined') throw new Error('A target class is required.');
+  if (typeof features === 'undefined') throw new Error('A set of features is required.');
 
-/**
- * splitData() 
- */
-var init = function (json, className, features) {
-  if (typeof json === 'undefined') throw new Error('JSON not present');
-  var json = divide.ratio(json, 0.75);
+  data = divide.ratio(data, 0.75);
 
   try {
-    classifier = new DecisionTree(json[0], className, features);    
+    classifier = new DecisionTree(data[0], target, features);
   } catch (e) {
     console.debug(e);
   }
 
   try {
-    var accuracy = classifier.evaluate(json[1]);
+    var accuracy = classifier.evaluate(data[1]);
   } catch (e) {
-    debugger;
     console.debug(e);
   }
-  
+
   // return accuracy;
   return 1;
 };
 
 module.exports = {
-  init: init,
+  train: train,
   classify: function (obj) {
     var result;
     try {
@@ -279,7 +309,8 @@ module.exports = {
       return result;
     }
   }
-}
+};
+
 },{"decision-tree":3,"divide":5}],3:[function(require,module,exports){
 var _ = require('underscore');
 
