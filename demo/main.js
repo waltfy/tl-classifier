@@ -290,7 +290,7 @@ var train = function (data, target, features) {
   }
 
   try {
-    // TODO validate the data for veryfing accuracy
+    // TODO validate the data for veryfing accuracys
     accuracy = classifier.evaluate(data[1]);
   } catch (e) {
     console.debug('error evaluating accuracy', e);
