@@ -4,18 +4,26 @@ var TLC_APP = (function () {
 
   var tlc = require('../../lib/tlc');
 
-  function csvJSON (csv) {
+  /**
+   * csvToJSON() takes a csv and returns a POJO
+   *
+   * csv      String - the csv string to be converted
+   * returns  Object - representation of the csv as a POJO
+   */
+  function csvToJSON (csv) {
 
-    var lines = csv.split("\n");
+    function trim(str) {
+      return str.trim();
+    }
 
     var result = [];
-
-    var headers = lines[0].split(",");
+    var lines = csv.split("\n");
+    var headers = lines[0].split(",").map(trim);
 
     for (var i = 1; i < lines.length; i++){
 
       var obj = {};
-      var currentline = lines[i].split(",");
+      var currentline = lines[i].split(",").map(trim);
 
       for (var j = 0; j < headers.length; j++){
         obj[headers[j]] = currentline[j];
@@ -30,24 +38,18 @@ var TLC_APP = (function () {
   var Tester = React.createClass({displayName: 'Tester',
 
     getInitialState: function () {
-      return { output: null };
+      return { input: {} };
     },
 
     classify: function () {
-      var input = {},
-          self = this;
-
-      this.props.features.forEach(function (attr) {
-        input[attr] = self.state[attr+'_val'];
-      });
-
+      var input = this.state.input;
       this.setState({output: tlc.classify(input)});
     },
 
     handleChange: function (attr, e) {
-      var st = {};
-      st[attr+'_val'] = e.target.value;
-      this.setState(st, this.classify);
+      var input = this.state.input;
+      input[attr] = e.target.value.trim();
+      this.setState({ input: input }, this.classify);
     },
 
     render: function () {
@@ -68,14 +70,14 @@ var TLC_APP = (function () {
           React.DOM.table(null, 
             React.DOM.thead(null, 
               React.DOM.tr(null, 
-                this.props.features.map(createHeaders), 
-                React.DOM.th(null, this.props.outputClass || 'Output')
+                 this.props.features.map(createHeaders), 
+                React.DOM.th(null,  this.props.output || 'Output')
               )
             ), 
             React.DOM.tbody(null, 
               React.DOM.tr(null, 
-                this.props.features.map(createFields), 
-                React.DOM.td(null, React.DOM.input({type: "text", readOnly: true, value: this.state.output}))
+                 this.props.features.map(createFields), 
+                React.DOM.td(null, React.DOM.input({type: "text", readOnly: true, value:  this.state.output}))
               )
             )
           )
@@ -87,7 +89,7 @@ var TLC_APP = (function () {
   var Trainer = React.createClass({displayName: 'Trainer',
     render: function () {
       var props = this.props;
-      console.log('props:', props);
+
       return (
         React.DOM.div(null, 
           React.DOM.p(null, "3. ", React.DOM.button({onClick: props.train}, "Train"), " the classifier."), 
@@ -119,7 +121,7 @@ var TLC_APP = (function () {
 
       return (
         React.DOM.div(null, 
-          React.DOM.p(null, "2. Select the attributes in order to determine an output. ", React.DOM.button({onClick:  this.props.setOutput, value: null}, "Clear Output")), 
+          React.DOM.p(null, "2. Select the attributes in order to determine an output. ", React.DOM.button({onClick:  this.props.setOutput, value: null}, "Clear Output"), "."), 
           React.DOM.table(null, 
             React.DOM.thead(null, 
               React.DOM.tr(null, 
@@ -149,7 +151,7 @@ var TLC_APP = (function () {
 
       reader.onload = (function (file, ctx) {
         return function (e) {
-          var json = csvJSON(e.target.result);
+          var json = csvToJSON(e.target.result);
           ctx.props.loadData(json);
         };
       })(files[0], this);
@@ -241,7 +243,7 @@ var TLC_APP = (function () {
           DataLoader({loadData:  this.loadData}), 
           AttributePicker({headers:  state.headers, output:  state.output, setInput:  this.setInput, setOutput:  this.setOutput}), 
           Trainer({train:  this.train, accuracy:  state.accuracy, timeTaken:  state.timeTaken}), 
-          Tester({outputClass:  state.outputClass, features:  state.features})
+          Tester({output:  state.output, features:  state.features})
         )
       );
     }
@@ -260,7 +262,7 @@ var TLC_APP = (function () {
 var DecisionTree = require('decision-tree');
 var divide = require('divide');
 
-// TODO validate the data for veryfing accuracyg
+var classifier;
 
 /**
  * train() trains the decision tree given a data set
@@ -272,36 +274,44 @@ var divide = require('divide');
  * returns    Object - the current classifier.
  */
 var train = function (data, target, features) {
-  // validate
+  // FIXME ensure that we have not empty fields on the data, this will cause us trouble while classifying
+  // validating arguments
   if (typeof data === 'undefined') throw new Error('A data set is required.');
   if (typeof target === 'undefined') throw new Error('A target class is required.');
   if (typeof features === 'undefined') throw new Error('A set of features is required.');
 
-  data = divide.ratio(data, 0.75);
+  var accuracy = null;
+  data = divide.ratio(data, 0.66);
+
+  console.log('data:', data);
+  console.log('target:', target);
+  console.log('features:', features);
 
   try {
     classifier = new DecisionTree(data[0], target, features);
   } catch (e) {
-    console.debug(e);
+    console.debug('error classifying:', e);
   }
 
   try {
-    var accuracy = classifier.evaluate(data[1]);
+    // TODO validate the data for veryfing accuracy
+    accuracy = classifier.evaluate(data[1]);
   } catch (e) {
-    console.debug(e);
+    console.debug('error evaluating accuracy', e);
   }
 
   // return accuracy;
-  return 1;
+  return accuracy;
 };
 
 module.exports = {
   train: train,
   classify: function (obj) {
     var result;
+    console.log('classifier:', classifier);
     try {
       result = classifier.predict(obj);
-      console.log('result', result);
+      console.log('result ->', result);
     } catch (e) {
       console.debug('could not classify, RETRAIN');
       // console.log(e);

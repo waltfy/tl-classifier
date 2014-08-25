@@ -3,18 +3,26 @@ var TLC_APP = (function () {
 
   var tlc = require('../../lib/tlc');
 
-  function csvJSON (csv) {
+  /**
+   * csvToJSON() takes a csv and returns a POJO
+   *
+   * csv      String - the csv string to be converted
+   * returns  Object - representation of the csv as a POJO
+   */
+  function csvToJSON (csv) {
 
-    var lines = csv.split("\n");
+    function trim(str) {
+      return str.trim();
+    }
 
     var result = [];
-
-    var headers = lines[0].split(",");
+    var lines = csv.split("\n");
+    var headers = lines[0].split(",").map(trim);
 
     for (var i = 1; i < lines.length; i++){
 
       var obj = {};
-      var currentline = lines[i].split(",");
+      var currentline = lines[i].split(",").map(trim);
 
       for (var j = 0; j < headers.length; j++){
         obj[headers[j]] = currentline[j];
@@ -29,24 +37,18 @@ var TLC_APP = (function () {
   var Tester = React.createClass({
 
     getInitialState: function () {
-      return { output: null };
+      return { input: {} };
     },
 
     classify: function () {
-      var input = {},
-          self = this;
-
-      this.props.features.forEach(function (attr) {
-        input[attr] = self.state[attr+'_val'];
-      });
-
+      var input = this.state.input;
       this.setState({output: tlc.classify(input)});
     },
 
     handleChange: function (attr, e) {
-      var st = {};
-      st[attr+'_val'] = e.target.value;
-      this.setState(st, this.classify);
+      var input = this.state.input;
+      input[attr] = e.target.value.trim();
+      this.setState({ input: input }, this.classify);
     },
 
     render: function () {
@@ -67,14 +69,14 @@ var TLC_APP = (function () {
           <table>
             <thead>
               <tr>
-                {this.props.features.map(createHeaders)}
-                <th>{this.props.outputClass || 'Output'}</th>
+                { this.props.features.map(createHeaders) }
+                <th>{ this.props.output || 'Output' }</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                {this.props.features.map(createFields)}
-                <td><input type='text' readOnly value={this.state.output} /></td>
+                { this.props.features.map(createFields) }
+                <td><input type='text' readOnly value={ this.state.output } /></td>
               </tr>
             </tbody>
           </table>
@@ -86,7 +88,7 @@ var TLC_APP = (function () {
   var Trainer = React.createClass({
     render: function () {
       var props = this.props;
-      console.log('props:', props);
+
       return (
         <div>
           <p>3. <button onClick={props.train}>Train</button> the classifier.</p>
@@ -118,7 +120,7 @@ var TLC_APP = (function () {
 
       return (
         <div>
-          <p>2. Select the attributes in order to determine an output. <button onClick={ this.props.setOutput } value={null}>Clear Output</button></p>
+          <p>2. Select the attributes in order to determine an output. <button onClick={ this.props.setOutput } value={null}>Clear Output</button>.</p>
           <table>
             <thead>
               <tr>
@@ -148,7 +150,7 @@ var TLC_APP = (function () {
 
       reader.onload = (function (file, ctx) {
         return function (e) {
-          var json = csvJSON(e.target.result);
+          var json = csvToJSON(e.target.result);
           ctx.props.loadData(json);
         };
       })(files[0], this);
@@ -240,7 +242,7 @@ var TLC_APP = (function () {
           <DataLoader loadData={ this.loadData } />
           <AttributePicker headers={ state.headers } output={ state.output } setInput={ this.setInput } setOutput={ this.setOutput } />
           <Trainer train={ this.train } accuracy={ state.accuracy } timeTaken={ state.timeTaken }/>
-          <Tester outputClass={ state.outputClass } features={ state.features }/>
+          <Tester output={ state.output } features={ state.features }/>
         </div>
       );
     }
