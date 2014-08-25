@@ -1,3 +1,4 @@
+var assert = require('assert');
 var t = require('tap').test;
 var tlc = require('../');
 
