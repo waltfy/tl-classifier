@@ -10,7 +10,7 @@ var TLC_APP = (function () {
    * csv      String - the csv string to be converted
    * returns  Object - representation of the csv as a POJO
    */
-  function csvToJSON (csv) {
+  function csvToJSON(csv) {
 
     function trim(str) {
       return str.trim();
@@ -35,22 +35,8 @@ var TLC_APP = (function () {
     // return JSON.stringify(result); // JSON
   }
 
+  /** Handles the logic for testing the decision tree */
   var Tester = React.createClass({displayName: 'Tester',
-
-    getInitialState: function () {
-      return { input: {} };
-    },
-
-    classify: function () {
-      var input = this.state.input;
-      this.setState({output: tlc.classify(input)});
-    },
-
-    handleChange: function (attr, e) {
-      var input = this.state.input;
-      input[attr] = e.target.value.trim();
-      this.setState({ input: input }, this.classify);
-    },
 
     render: function () {
 
@@ -61,12 +47,13 @@ var TLC_APP = (function () {
       };
 
       var createFields = function (attr, i) {
-        return React.DOM.td({key: i }, React.DOM.input({onChange:  self.handleChange.bind(self, attr), type: "text"}));
+        return React.DOM.td({key: i, ref: attr }, React.DOM.input({onChange:  self.props.setFeature.bind(self, attr), type: "text"}));
       };
 
       return (
         React.DOM.div(null, 
-          React.DOM.p(null, "4. Input some data and see the results."), 
+          React.DOM.p(null, "4. Upload some data or enter it yourself and see the classifier in action. ", DataLoader({load:  this.props.load})), 
+          React.DOM.p(null,  this.props.accuracy ? 'Accuracy: ' + (this.props.accuracy * 100).toFixed(0) + '%' : ''), 
           React.DOM.table(null, 
             React.DOM.thead(null, 
               React.DOM.tr(null, 
@@ -77,7 +64,7 @@ var TLC_APP = (function () {
             React.DOM.tbody(null, 
               React.DOM.tr(null, 
                  this.props.features.map(createFields), 
-                React.DOM.td(null, React.DOM.input({type: "text", readOnly: true, value:  this.state.output}))
+                React.DOM.td(null, React.DOM.input({type: "text", readOnly: true, value:  this.props.outputValue}))
               )
             )
           )
@@ -86,25 +73,27 @@ var TLC_APP = (function () {
     }
   });
 
+  /** Handles the logic for training the decision tree */
   var Trainer = React.createClass({displayName: 'Trainer',
     render: function () {
       var props = this.props;
 
       return (
         React.DOM.div(null, 
-          React.DOM.p(null, "3. ", React.DOM.button({onClick: props.train}, "Train"), " the classifier."), 
-          React.DOM.p(null, props.accuracy ? 'Accuracy: ' + (props.accuracy * 100).toFixed(0) + '%' : ''), 
-          React.DOM.p(null, props.timeTaken ? 'Training Time(ms): ' + (props.timeTaken) + 'ms' : ''), 
+          React.DOM.p(null, "3. ", React.DOM.button({onClick:  props.train}, "Train"), " the classifier."), 
+          React.DOM.p(null, " ", props.timeTaken ? 'Training Time(ms): ' + (props.timeTaken) + 'ms' : ''), 
           React.DOM.hr(null)
         )
       );
     }
   });
 
+  /** Handles the logic for selecting attributes as input or output */
   var AttributePicker = React.createClass({displayName: 'AttributePicker',
 
     render: function () {
       var self = this;
+
       var createRow = function (attr, i) {
         var props = self.props;
         var item = props.headers[attr];
@@ -113,6 +102,7 @@ var TLC_APP = (function () {
         return (
           React.DOM.tr({key: i }, 
             React.DOM.td(null, attr ), 
+            "// if is output or input do not show the opposite option", 
             React.DOM.td(null,  isOutput ? '' : React.DOM.input({type: "checkbox", value: attr, onChange:  props.setInput, checked:  item.selected})), 
             React.DOM.td(null,  item.selected ? '' : React.DOM.input({type: "radio", value: attr, name: "output", onChange:  props.setOutput, checked: isOutput }))
           )
@@ -132,7 +122,9 @@ var TLC_APP = (function () {
             ), 
             React.DOM.form(null, 
               React.DOM.tbody(null, 
-                 Object.keys(this.props.headers).map(createRow) 
+                 console.time('attribut selector loaded'), 
+                 Object.keys(this.props.headers).map(createRow), 
+                 console.timeEnd('attribut selector loaded') 
               )
             )
           ), 
@@ -142,6 +134,7 @@ var TLC_APP = (function () {
     }
   });
 
+  /** Responsible for loading in the file */
   var DataLoader = React.createClass({displayName: 'DataLoader',
     onChange: function (e) {
       e.preventDefault();
@@ -151,63 +144,87 @@ var TLC_APP = (function () {
 
       reader.onload = (function (file, ctx) {
         return function (e) {
-          var json = csvToJSON(e.target.result);
-          ctx.props.loadData(json);
+          ctx.props.load(csvToJSON(e.target.result));
         };
       })(files[0], this);
-
-      reader.readAsText(files[0]);
+      try {
+        reader.readAsText(files[0]);
+      } catch (err) {
+        console.error('No file chosen');
+      }
     },
 
     render: function () {
-      return (
-        React.DOM.div(null, 
-          React.DOM.p(null, "1. Please select a csv ", React.DOM.input({type: "file", accept: ".csv", onChange:  this.onChange})), 
-          React.DOM.hr(null)
-        )
-      );
+      return React.DOM.input({type: "file", accept: ".csv", onChange:  this.onChange});
     }
   });
 
+  /** Top Level Component */
   var App = React.createClass({displayName: 'App',
+
+    defaults : {
+      data: [],
+      headers: {},
+      output: null,
+      outputValue: null,
+      accuracy: null,
+      timeTaken: null,
+      classifier: null,
+      features: []
+    },
+
     getInitialState: function () {
-      return {
-        data: [],
-        headers: {},
-        output: null,
-        accuracy: null,
-        timeTaken: null,
-        features: []
-      };
+      return this.defaults;
     },
 
+    /** resets the state of the application */
     reset: function (e) {
-      console.debug('should reset the application');
+      var shouldReset = confirm('Are you sure you want to reset the state of the application?');
+      if (shouldReset) {
+        console.time('resetting TL-Classifier');
+        this.setState(this.defaults);
+        console.timeEnd('resetting TL-Classifier');
+      }
     },
 
+    /** responsible for training the classifier */
     train: function (e) {
       var state = this.state;
-      var headers = state.headers,
-          output = state.output;
+      var output = state.output;
+      var features = state.features;
 
-      var features = Object.keys(state.headers).filter(function (attr) {
-        return state.headers[attr].selected;
-      });
+      if (!output) return alert('You must set a target value (i.e. output).');
+      if (!features.length) return alert('You must select at least one input value');
 
       var start = Date.now();
-      var accuracy = tlc.train(this.state.data, output, features);
+      var classifier = tlc.train(this.state.data, output, features);
       var end = Date.now();
-      this.setState({ accuracy: accuracy, timeTaken: (end - start), features: features });
+
+      this.setState({ classifier: classifier, timeTaken: (end - start), features: features });
+    },
+
+    classify: function () {
+      var classifier = this.state.classifier;
+      var features = this.state.features;
+      var headers = this.state.headers;
+      var c = {};
+
+      features.forEach(function (attr) {
+        c[attr] = headers[attr].value;
+      });
+
+      var predicted = tlc.classify(classifier, c);
+      this.setState({ outputValue: predicted });
     },
 
     /**
-     * getHeaders() retrieves the headers from a dataset
+     * setHeaders() retrieves the headers from a dataset
      *
      * data       Array - the data to be processed
      * content    Anything - the value for each key in the object returned
      * returns    Array - the headers in the desired format
      */
-    getHeaders: function (data, content) {
+    setHeaders: function (data, content) {
       var headers = {};
       content = (typeof content !== 'undefined') ? content : {}; // sets default for content
       // picks a sample row and extracts the keys, setting it to an object
@@ -217,11 +234,26 @@ var TLC_APP = (function () {
       return headers;
     },
 
+    // sets the value of a feature in order to classify
+    setFeature: function (attr, e) {
+      var headers = this.state.headers;
+      headers[attr].value = e.target.value;
+      this.setState({ headers: headers }, this.classify);
+    },
+
+    // returns all selected input
+    getFeatures: function () {
+      var headers = this.state.headers;
+      return Object.keys(headers).filter(function (attr) {
+        return headers[attr].selected;
+      });
+    },
+
     // setInput() handles the change of checkboxes for each attribute
     setInput: function (e) {
       var headers = this.state.headers;
       headers[e.target.value].selected = e.target.checked;
-      this.setState({ headers: headers });
+      this.setState({ headers: headers, features: this.getFeatures() });
     },
 
     // setOutput() handles the change of radio button for output
@@ -229,9 +261,20 @@ var TLC_APP = (function () {
       this.setState({ output: e.target.value });
     },
 
-    // loadData() handles the loading of the dataset, and is responsible for adding it to the state
-    loadData: function (data) {
-      this.setState({ data: data, headers: this.getHeaders(data, { selected: false }) });
+    // loadTrainingData() handles the loading of the dataset, and is responsible for adding it to the state
+    loadTrainingData: function (data) {
+      this.setState({ data: data, headers: this.setHeaders(data, { selected: false, value: null }) });
+    },
+
+    loadTestData: function (data) {
+      var classifier = this.state.classifier;
+      this.setState({ testData: data }, this.evaluateTestData);
+    },
+
+    evaluateTestData: function () {
+      var classifier = this.state.classifier;
+      if (!this.state.data) alert('You must uploaded and trained the classifier first');
+      this.setState({ accuracy: classifier.evaluate(this.state.testData) });
     },
 
     render: function () {
@@ -240,10 +283,11 @@ var TLC_APP = (function () {
         React.DOM.div(null, 
           React.DOM.button({onClick:  this.reset}, "Reset"), 
           React.DOM.h1(null,  this.props.fileSupport ? 'TaxLogic Classifier Prototype' : 'Your browser does not support this demo.'), 
-          DataLoader({loadData:  this.loadData}), 
+          React.DOM.p(null, "1. Upload a csv file containing the training data. ", DataLoader({load:  this.loadTrainingData})), 
+          React.DOM.hr(null), 
           AttributePicker({headers:  state.headers, output:  state.output, setInput:  this.setInput, setOutput:  this.setOutput}), 
           Trainer({train:  this.train, accuracy:  state.accuracy, timeTaken:  state.timeTaken}), 
-          Tester({output:  state.output, features:  state.features})
+          Tester({accuracy:  this.state.accuracy, load:  this.loadTestData, output:  state.output, outputValue:  state.outputValue, features:  state.features, setFeature:  this.setFeature, classifier:  this.classifier})
         )
       );
     }
@@ -252,17 +296,39 @@ var TLC_APP = (function () {
   // checks for file reader support
   var supportsFileReader = (window.File !== 'undefined' && window.FileReader !== 'undefined' && window.FileList !== 'undefined' && window.Blob !== 'undefined');
 
-  // mount the app
+  console.time('initalising TL-Classifier');
   React.renderComponent(App({fileSupport: supportsFileReader}), window.TLC_APP);
+  console.timeEnd('initalising TL-Classifier');
+
 
 })(window);
-
 },{"../../lib/tlc":2}],2:[function(require,module,exports){
 // dependencies
 var DecisionTree = require('decision-tree');
 var divide = require('divide');
 
-var classifier;
+/**
+ * validate() validates each row and attribute for the data set
+ *
+ * data Array - the data set
+ * @return return type description
+ */
+var validate = function (data, target, features) {
+  console.log('validate() ====================');
+  var toValidate = features.concat(target);
+
+  console.time('validating');
+  toValidate.forEach(function (attribute) {
+    data.forEach(function (item, i) {
+      var curr = item[attribute];
+      if (!curr || curr === '' || curr.length === 0) {
+        console.log('isEmpty ====================');
+        data.splice(i, 1);
+      }
+    });
+  });
+  console.timeEnd('validating');
+};
 
 /**
  * train() trains the decision tree given a data set
@@ -274,37 +340,29 @@ var classifier;
  * returns    Object - the current classifier.
  */
 var train = function (data, target, features) {
-  // FIXME ensure that we have not empty fields on the data, this will cause us trouble while classifying
   // validating arguments
   if (typeof data === 'undefined') throw new Error('A data set is required.');
   if (typeof target === 'undefined') throw new Error('A target class is required.');
   if (typeof features === 'undefined') throw new Error('A set of features is required.');
 
+  var classifier;
   var accuracy = null;
-  data = divide.ratio(data, 0.66);
+  validate(data, target, features);
 
   try {
-    classifier = new DecisionTree(data[0], target, features);
+    classifier = new DecisionTree(data, target, features);
   } catch (e) {
-    console.debug('error classifying:', e);
+    console.error('error classifying:', e);
   }
 
-  try {
-    // TODO validate the data for veryfing accuracys
-    accuracy = classifier.evaluate(data[1]);
-  } catch (e) {
-    console.debug('error evaluating accuracy', e);
-  }
-
-  // return accuracy;
-  return accuracy;
+  return classifier;
 };
 
 module.exports = {
   train: train,
-  classify: function (obj) {
+  classify: function (classifier, obj) {
     var result;
-    console.log('classifier:', classifier);
+    console.log('classify() ====================');
     try {
       result = classifier.predict(obj);
       console.log('result ->', result);
